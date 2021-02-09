@@ -1,0 +1,134 @@
+<body>
+
+  <div class="container">
+    <div class="btn-container">
+      <button class="btn-left" onclick="clickButton('left')">left-click</button>
+      <button class="btn-right" onclick="clickButton('right')">right-click</button>
+    </div>
+  </div>
+  <div class="btn-container">
+    <button class="btn-left" onclick="clickButton('left')">left-click</button>
+    <button class="btn-right" onclick="clickButton('right')">right-click</button>
+  </div>
+  <style>
+    .container {
+      height: 100%;
+      background-color: black;
+      position: relative;
+    }
+    .btn-container {
+      height: 200px;
+      display: flex;
+      position: relative;
+      top: 0px;
+      width: 99%;
+    }
+    button {
+      width: 49%;
+      font-size: 75px;
+    }
+  </style>
+  <script>
+    // Create WebSocket connection.
+    const socket = new WebSocket('ws://'+window.location.hostname+':8080');
+
+    // Connection opened
+    socket.addEventListener('open', function (event) {
+        console.log('Open');
+    });
+
+    // Listen for messages
+    socket.addEventListener('message', function (event) {
+        console.log('Message from server ', event.data);
+    });
+    function moveMouse(x, y, length) {
+      console.log(length);
+      socket.send(`move ${x} ${y} ${length}`);
+    }
+    function clickButton(button, direction='down') {
+      socket.send(`click ${button} ${direction}`);
+    }
+    document.querySelectorAll('#btn-left').forEach((btnLeft) => {
+      btnLeft.onclick = function() {
+        clickButton('left', 'down');
+      }
+      btnLeft.onmouseup = function() {
+        clickButton('left', 'up');
+      }
+    });
+    document.querySelectorAll('#btn-right').forEach((btnLeft) => {
+      btnRight.onclick = function() {
+        clickButton('right', 'down');
+      }
+      btnRight.onmouseup = function() {
+        clickButton('right', 'up');
+      }
+    });
+
+    let state = null;
+
+    let stateOffset = null;
+    let lastUpdate = null;
+    let interval = null;
+    let touchMouseContainer = document.querySelectorAll('.container')[0];
+    touchMouseContainer.addEventListener('touchstart', (e) => {
+        if (e.touches.length > 1) {
+          console.log('Too many touches');
+          return;
+        }
+        e.ts = new Date().getTime();
+        state = e;
+        console.log('touchStart', e);
+    }, false);
+    touchMouseContainer.addEventListener('touchmove', (e) => {
+        e.ts = new Date().getTime();
+        console.log(e);
+        if (e.touches.length > 1) {
+          console.log('Too many touches');
+          return;
+        }
+        console.log('touchMove', state.touches[0].screenX - e.touches[0].screenX, state.touches[0].screenY - e.touches[0].screenY);
+        stateOffset = e;
+        if (interval) {
+          clearInterval(interval);
+        }
+        interval = setInterval(() => {
+          if (!lastUpdate) {
+            lastUpdate = state.ts;
+          }
+          console.log('ts', new Date().getTime(), lastUpdate, new Date().getTime() - lastUpdate)
+          if (lastUpdate) {
+            moveMouse(state.touches[0].screenX - stateOffset.touches[0].screenX, state.touches[0].screenY - stateOffset.touches[0].screenY, new Date().getTime() - lastUpdate)
+          }
+          lastUpdate = new Date().getTime();
+        }, 100)
+        //
+    }, false);
+    touchMouseContainer.addEventListener('touchcancel', (e) => {
+        e.ts = new Date().getTime();
+       console.log(e);
+       console.log('TouchCancel');
+       if (!lastUpdate) {
+         lastUpdate = state.ts;
+       }
+       clearInterval(interval);
+       moveMouse(state.touches[0].screenX - stateOffset.touches[0].screenX, state.touches[0].screenY - stateOffset.touches[0].screenY, new Date().getTime() - lastUpdate)
+       state = null;
+       stateOffset = null;
+       lastUpdate = null;
+    }, false);
+    touchMouseContainer.addEventListener('touchend', (e) => {
+        e.ts = new Date().getTime();
+        console.log('TouchEnd', e.ts, lastUpdate);
+        if (!lastUpdate) {
+          lastUpdate = state.ts;
+        }
+        clearInterval(interval);
+        moveMouse(state.touches[0].screenX - stateOffset.touches[0].screenX, state.touches[0].screenY - stateOffset.touches[0].screenY, new Date().getTime() - lastUpdate)
+        state = null;
+        stateOffset = null;
+        lastUpdate = null;
+    }, false);
+    console.log(touchMouseContainer);
+  </script>
+</body>
