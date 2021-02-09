@@ -1,0 +1,25 @@
+{
+  "name": "remote-mouse",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "dependencies": {
+    "robotjs": "^0.6.0",
+    "ws": "^7.4.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zymtom/remote-mouse.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zymtom/remote-mouse/issues"
+  },
+  "homepage": "https://github.com/zymtom/remote-mouse#readme"
+}
