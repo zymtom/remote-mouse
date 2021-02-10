@@ -18,6 +18,9 @@ wss.on('connection', function connection(ws) {
         case 'move':
           moveMouse(...splitMessage.slice(1));
           break;
+        case 'key':
+          typeKey(...splitMessage.slice(1));
+          break;
         case 'stopMove':
           moving = false;
           moveTime = 0;
@@ -31,6 +34,9 @@ wss.on('connection', function connection(ws) {
     });
     ws.send('Opened Connection');
 });
+function typeKey(key) {
+    robot.keyTap(key)
+}
 function moveMouse(x, y, length) {
   console.log('Moving', x, y);
   moveForceX = x;
@@ -56,7 +62,7 @@ function startSmoothMove() {
     console.log((new Date().getTime() - start), moveTime);
     let mouse = robot.getMousePos();
     console.log("Mouse is at x:" + mouse.x + " y:" + mouse.y);
-    robot.moveMouse(mouse.x - (moveForceX/5), mouse.y - (moveForceY/5));
+    robot.moveMouse(mouse.x - (moveForceX/forceMultiplier), mouse.y - (moveForceY/forceMultiplier));
   }
   moveTime = 0;
   moving = false;

@@ -1,33 +1,78 @@
-<body>
-
-  <div class="container">
-    <div class="btn-container">
-      <button class="btn-left" onclick="clickButton('left')">left-click</button>
-      <button class="btn-right" onclick="clickButton('right')">right-click</button>
+<html>
+  <head>
+    <meta charset="utf-8">
+  </head>
+  <body>
+    <div class="container">
+      <div class="btn-container">
+        <button class="btn-left" onclick="clickButton('left')">left-click</button>
+        <button class="btn-right" onclick="clickButton('right')">right-click</button>
+      </div>
+      <button class="btn-menu">Menu</button>
     </div>
-  </div>
-  <div class="btn-container">
+    <div class="menu-overlay">
+      <div class="menu">
+        <div class="media-buttons">
+          <button class="btn-media-last-track">⏮️</button><button class="btn-media-toggle">⏯</button><button class="btn-media-next-track">⏭️</button>
+        </div>
+        <div class="sound-control">
+          <button class="btn-sound-mute">🔇</button><button class="btn-sound-decrease">🔉</button><button class="btn-sound-increase">🔊</button>
+        </div>
+      </div>
+    </div>
     <button class="btn-left" onclick="clickButton('left')">left-click</button>
     <button class="btn-right" onclick="clickButton('right')">right-click</button>
-  </div>
-  <style>
-    .container {
-      height: 100%;
-      background-color: black;
-      position: relative;
-    }
-    .btn-container {
-      height: 200px;
-      display: flex;
-      position: relative;
-      top: 0px;
-      width: 99%;
-    }
-    button {
-      width: 49%;
-      font-size: 75px;
-    }
-  </style>
+
+      <style>
+        .media-buttons {
+          display: flex;
+        }
+        .sound-control {
+          display: flex;
+        }
+        .media-buttons > button {
+
+        }
+        .menu-overlay {
+          background-color: #3333336b;
+          z-index: 2;
+          height 100%;
+          width 100%;
+          position: absolute;
+          top: 0;
+          left: 0;
+          bottom: 0;
+          right: 0;
+          display: none;
+        }
+        .menu {
+          margin: 5px;
+          background-color: #333;
+          height: 95%;
+          width: 91%;
+          position: relative;
+          margin-left: auto;
+          margin-right: auto;
+          margin-top: 50px;
+          z-index: 3;
+        }
+        .container {
+          height: 100%;
+          background-color: black;
+          position: relative;
+        }
+        .btn-container {
+          height: 200px;
+          display: flex;
+          position: relative;
+          top: 0px;
+          width: 99%;
+        }
+        button {
+          width: 49%;
+          font-size: 75px;
+        }
+      </style>
   <script>
     // Create WebSocket connection.
     const socket = new WebSocket('ws://'+window.location.hostname+':8080');
@@ -48,7 +93,55 @@
     function clickButton(button, direction='down') {
       socket.send(`click ${button} ${direction}`);
     }
-    document.querySelectorAll('#btn-left').forEach((btnLeft) => {
+    function pressKey(key) {
+      socket.send(`key ${key}`)
+    }
+    document.querySelectorAll('.btn-sound-decrease').forEach((menuOverlay) => {
+      menuOverlay.onclick = function() {
+        pressKey('audio_vol_down')
+      }
+    });
+    document.querySelectorAll('.btn-sound-increase').forEach((menuOverlay) => {
+      menuOverlay.onclick = function() {
+        pressKey('audio_vol_up')
+      }
+    });
+    document.querySelectorAll('.btn-sound-mute').forEach((menuOverlay) => {
+      menuOverlay.onclick = function() {
+        pressKey('audio_mute')
+      }
+    });
+    document.querySelectorAll('.btn-media-last-track').forEach((menuOverlay) => {
+      menuOverlay.onclick = function() {
+        pressKey('audio_prev')
+      }
+    });
+    document.querySelectorAll('.btn-media-toggle').forEach((menuOverlay) => {
+      menuOverlay.onclick = function() {
+        pressKey('audio_play')
+      }
+    });
+    document.querySelectorAll('.btn-media-next-track').forEach((menuOverlay) => {
+      menuOverlay.onclick = function() {
+        pressKey('audio_next')
+      }
+    });
+    document.querySelectorAll('.menu-overlay').forEach((menuOverlay) => {
+      menuOverlay.onclick = function() {
+        menuOverlay.style.display = 'none';
+      }
+    });
+    document.querySelectorAll('.menu').forEach((menuOverlay) => {
+      menuOverlay.onclick = function(e) {
+        e.stopPropagation();
+      }
+    });
+    document.querySelectorAll('.btn-menu').forEach((btnMenu) => {
+      btnMenu.onclick = function() {
+        document.querySelectorAll('.menu-overlay')[0].style.display = 'revert'
+      }
+    });
+    document.querySelectorAll('.btn-left').forEach((btnLeft) => {
       btnLeft.onclick = function() {
         clickButton('left', 'down');
       }
@@ -56,7 +149,7 @@
         clickButton('left', 'up');
       }
     });
-    document.querySelectorAll('#btn-right').forEach((btnLeft) => {
+    document.querySelectorAll('.btn-right').forEach((btnRight) => {
       btnRight.onclick = function() {
         clickButton('right', 'down');
       }
@@ -105,26 +198,29 @@
         //
     }, false);
     touchMouseContainer.addEventListener('touchcancel', (e) => {
-        e.ts = new Date().getTime();
-       console.log(e);
-       console.log('TouchCancel');
-       if (!lastUpdate) {
-         lastUpdate = state.ts;
-       }
-       clearInterval(interval);
-       moveMouse(state.touches[0].screenX - stateOffset.touches[0].screenX, state.touches[0].screenY - stateOffset.touches[0].screenY, new Date().getTime() - lastUpdate)
-       state = null;
-       stateOffset = null;
-       lastUpdate = null;
-    }, false);
-    touchMouseContainer.addEventListener('touchend', (e) => {
-        e.ts = new Date().getTime();
-        console.log('TouchEnd', e.ts, lastUpdate);
-        if (!lastUpdate) {
-          lastUpdate = state.ts;
+        if (interval) {
+          clearInterval(interval);
         }
-        clearInterval(interval);
-        moveMouse(state.touches[0].screenX - stateOffset.touches[0].screenX, state.touches[0].screenY - stateOffset.touches[0].screenY, new Date().getTime() - lastUpdate)
+        if (state && stateOffset) {
+          if (!lastUpdate) {
+            lastUpdate = state.ts;
+          }
+          moveMouse(state.touches[0].screenX - stateOffset.touches[0].screenX, state.touches[0].screenY - stateOffset.touches[0].screenY, new Date().getTime() - lastUpdate)
+        }
+        state = null;
+        stateOffset = null;
+        lastUpdate = null;
+      }, false);
+    touchMouseContainer.addEventListener('touchend', (e) => {
+        if (interval) {
+          clearInterval(interval);
+        }
+        if (state && stateOffset) {
+          if (!lastUpdate) {
+            lastUpdate = state.ts;
+          }
+          moveMouse(state.touches[0].screenX - stateOffset.touches[0].screenX, state.touches[0].screenY - stateOffset.touches[0].screenY, new Date().getTime() - lastUpdate)
+        }
         state = null;
         stateOffset = null;
         lastUpdate = null;
