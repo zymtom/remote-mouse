@@ -3,13 +3,17 @@ const WebSocket = require('ws');
 const robot = require("robotjs");
 const fs = require('fs');
 
-const wss = new WebSocket.Server({ port: 8080 });
-
 let moving = false;
 let moveTime = null;
 let moveForceX = null;
 let moveForceY = null;
-let forceMultiplier = 5
+const forceMultiplier = 0.1;
+
+const websocketsServer = http.createServer();
+
+const wss = new WebSocket.Server({ port: 8080, maxPayload: 1000 });
+
+
 wss.on('connection', function connection(ws) {
     ws.on('message', function incoming(message) {
       console.log('received: %s', message);
@@ -34,6 +38,7 @@ wss.on('connection', function connection(ws) {
     });
     ws.send('Opened Connection');
 });
+
 function typeKey(key) {
     robot.keyTap(key)
 }
@@ -62,15 +67,21 @@ function startSmoothMove() {
     console.log((new Date().getTime() - start), moveTime);
     let mouse = robot.getMousePos();
     console.log("Mouse is at x:" + mouse.x + " y:" + mouse.y);
-    robot.moveMouse(mouse.x - (moveForceX/forceMultiplier), mouse.y - (moveForceY/forceMultiplier));
+    robot.moveMouse(mouse.x - (moveForceX * forceMultiplier), mouse.y - (moveForceY * forceMultiplier));
   }
   moveTime = 0;
   moving = false;
 }
-function click(button, direction='down') {
-  robot.mouseClick(button)
+function click(button, direction=false) {
+  if (direction) {
+    robot.mouseToggle(direction, button)
+  } else {
+    robot.mouseClick(button)
+  }
 }
 //create a server object:
+
+
 http.createServer(function (req, res) {
   res.write(fs.readFileSync('./client.html')); //write a response to the client
   res.end(); //end the response

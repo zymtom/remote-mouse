@@ -3,12 +3,19 @@
     <meta charset="utf-8">
   </head>
   <body>
-    <div class="container">
-      <div class="btn-container">
-        <button class="btn-left" onclick="clickButton('left')">left-click</button>
-        <button class="btn-right" onclick="clickButton('right')">right-click</button>
+    <div class="btn-container">
+      <div class="btn-click-container">
+        <button class="btn-left">left-click</button>
+        <button class="btn-right">right-click</button>
+        <button class="btn-hold">hold</button>
       </div>
-      <button class="btn-menu">Menu</button>
+      <div class="btn-menu-container">
+        <button class="btn-menu">Menu</button>
+      </div>
+    </div>
+    <div class="container">
+    </div>
+    <div class="scroll">
     </div>
     <div class="menu-overlay">
       <div class="menu">
@@ -20,10 +27,24 @@
         </div>
       </div>
     </div>
-    <button class="btn-left" onclick="clickButton('left')">left-click</button>
-    <button class="btn-right" onclick="clickButton('right')">right-click</button>
+    <!--button class="btn-left" onclick="clickButton('left')">left-click</button>
+    <button class="btn-right" onclick="clickButton('right')">right-click</button-->
 
       <style>
+        .scroll {
+          width: 9%;
+          position: absolute;
+          right: 0;
+          top: 0;
+          height: 100%;
+          background-color: #333;
+        }
+        .btn-hold {
+          width: 20%;
+        }
+        .btn-click-container {
+          display: flex;
+        }
         .media-buttons {
           display: flex;
         }
@@ -49,11 +70,11 @@
           margin: 5px;
           background-color: #333;
           height: 95%;
-          width: 91%;
+          width: 80%;
           position: relative;
           margin-left: auto;
           margin-right: auto;
-          margin-top: 50px;
+          margin-top: 60px;
           z-index: 3;
         }
         .container {
@@ -64,9 +85,11 @@
         .btn-container {
           height: 200px;
           display: flex;
-          position: relative;
+          position: fixed;
+          flex-direction: column;
           top: 0px;
           width: 99%;
+          z-index: 2;
         }
         button {
           width: 49%;
@@ -75,8 +98,13 @@
       </style>
   <script>
     // Create WebSocket connection.
+    let shouldHoldNextButton = false;
+    let holding = null;
     const socket = new WebSocket('ws://'+window.location.hostname+':8080');
 
+    function holdNextButton() {
+        shouldHoldNextButton = true;
+    }
     // Connection opened
     socket.addEventListener('open', function (event) {
         console.log('Open');
@@ -90,8 +118,13 @@
       console.log(length);
       socket.send(`move ${x} ${y} ${length}`);
     }
-    function clickButton(button, direction='down') {
-      socket.send(`click ${button} ${direction}`);
+    function clickButton(button, direction=false) {
+      if (direction) {
+        socket.send(`click ${button} ${direction}`);
+      } else {
+        socket.send(`click ${button}`);
+      }
+
     }
     function pressKey(key) {
       socket.send(`key ${key}`)
@@ -136,28 +169,71 @@
         e.stopPropagation();
       }
     });
+    document.querySelectorAll('.btn-container').forEach((item) => {
+      item.onclick = function(e) {
+        e.stopPropagation();
+      }
+    });
     document.querySelectorAll('.btn-menu').forEach((btnMenu) => {
       btnMenu.onclick = function() {
         document.querySelectorAll('.menu-overlay')[0].style.display = 'revert'
       }
     });
-    document.querySelectorAll('.btn-left').forEach((btnLeft) => {
-      btnLeft.onclick = function() {
-        clickButton('left', 'down');
-      }
-      btnLeft.onmouseup = function() {
-        clickButton('left', 'up');
-      }
-    });
-    document.querySelectorAll('.btn-right').forEach((btnRight) => {
-      btnRight.onclick = function() {
-        clickButton('right', 'down');
-      }
-      btnRight.onmouseup = function() {
-        clickButton('right', 'up');
-      }
-    });
 
+    document.querySelectorAll('.btn-left').forEach((btn) => {
+      btn.onclick = function() {
+        if (shouldHoldNextButton) {
+          shouldHoldNextButton = false;
+          holding = btn;
+          document.querySelectorAll('.btn-hold').forEach((btnHold) => {
+            btnHold.style["background-color"] = "";
+          });
+          btn.style["background-color"] = '#b4b4b4';
+          clickButton('left', 'down');
+        } else if (holding === btn) {
+          holding = null;
+          btn.style["background-color"] = '';
+          clickButton('left', 'up');
+        } else {
+          clickButton('left');
+        }
+
+      }
+      /*btnLeft.onmouseup = function() {
+        clickButton('left', 'up');
+      }*/
+    });
+    document.querySelectorAll('.btn-right').forEach((btn) => {
+      btn.onclick = function() {
+        if (shouldHoldNextButton) {
+          shouldHoldNextButton = false;
+          holding = btn;
+          document.querySelectorAll('.btn-hold').forEach((btnHold) => {
+            btnHold.style["background-color"] = "";
+          });
+          btn.style["background-color"] = '#b4b4b4';
+          clickButton('right', 'down');
+        } else if (holding === btn) {
+          holding = null;
+          btn.style["background-color"] = '';
+          clickButton('right', 'up');
+        } else {
+          clickButton('right');
+        }
+      }
+      /*btnRight.onmouseup = function() {
+        clickButton('right', 'up');
+      }*/
+    });
+    document.querySelectorAll('.btn-hold').forEach((btn) => {
+      btn.onclick = function() {
+        holdNextButton();
+        btn.style["background-color"] = '#b4b4b4';
+      }
+      /*btnRight.onmouseup = function() {
+        clickButton('right', 'up');
+      }*/
+    });
     let state = null;
 
     let stateOffset = null;
